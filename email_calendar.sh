@@ -63,6 +63,7 @@ function getDateDiff ()
     date2=$(date -d "$2" +%s)
     # transformation from seconds to days: 1 day = 24*60*60 = 86400
     echo "$(( (date2 - date1) / 86400 ))"
+    return 0
 }
 
 function convert_utc_to_local_time() 
@@ -79,6 +80,7 @@ function convert_utc_to_local_time()
     local local_date=$(date -d "$local_datetime" +"%Y%m%d")
     local local_time=$(date -d "$local_datetime" +"%H%M")
     echo "$local_date $local_time"
+    return 0
 }
 
 # Prevent --file and --url options are specified

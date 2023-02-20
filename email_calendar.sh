@@ -7,6 +7,7 @@
 #  Description: Sends the daily appointments of a Google Calendar per email.
 #               Also works with local .ics files as long as they only use UTC times.
 #               Check the README.md for setup instructions.
+#            
 #     Language: bash script
 #       Author: heckerya78723@th-nuernberg.de
 #----------------------------------------------------------

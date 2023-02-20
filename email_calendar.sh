@@ -69,17 +69,18 @@ function getDateDiff ()
 function convert_utc_to_local_time() 
 # DESCRIPTION: converts a UTC time to the local time
 # PARAMETER:   $1 start date, $2 start time in YYYYMMDD and HHMM format
-# STDOUT:      local date and time in YYYYMMDD and HHMM format 
+# STDOUT:      local date and time in format "YYYYMMDD HHMM" format 
 {
     local start_date=$1
     local start_time=$2
     local start_datetime="${start_date:0:4}-${start_date:4:2}-${start_date:6:2} ${start_time:0:2}:${start_time:2:2} UTC"
 
+    # date +%Z returns the local timezone (TZ) as a string, e.g. CET for Central European Time
     local local_datetime=$(TZ=$(date +%Z) date -d "$start_datetime")
 
     local local_date=$(date -d "$local_datetime" +"%Y%m%d")
     local local_time=$(date -d "$local_datetime" +"%H%M")
-    echo "$local_date $local_time"
+    echo "${local_date} ${local_time}"
     return 0
 }
 
@@ -88,7 +89,7 @@ if [[ -n ${calendarURL} && -n ${inputFile} ]]; then
     printError "Only one calendar option can be choosen"
 fi
 
-# Prevent no calendar option is given
+# Prevent the case if no calendar option is given
 if [[ -z ${calendarURL} && -z ${inputFile} ]]; then
     printError "Please specify at least one calendar option"
 fi
@@ -123,14 +124,14 @@ if [[ -n ${calendarURL} ]]; then
         printVerbose "Creating directory ${storageDir}"
         mkdir "${storageDir}"
     fi
-    cd "${storageDir}" || exit
+    cd "${storageDir}" || printError "Could not change to directory ${storageDir}"
 
     printVerbose "Starting to download the calendar"
-   #if [[ ${verboseMode} -ne 0 ]]; then
-       #wget -v -t 2 --timeout 5 --timestamping "${calendarURL}" -o output_wget.log
-   #else
-       #wget -t 2 --timeout 5 --timestamping "${calendarURL}" -o /dev/null
-   #fi
+    if [[ ${verboseMode} -eq 1 ]]; then
+        wget -v -t 2 --timeout 5 --timestamping "${calendarURL}" -o output_wget.log
+    else
+        wget -t 2 --timeout 5 --timestamping "${calendarURL}" -o /dev/null
+    fi
 
     #Error if the ics file was not downloaded
     if [[ ! -f ${calendarURLName} ]]; then
@@ -152,10 +153,17 @@ fi
 # In FULL day mode the times are empty
 appointments=()
 event_block=0
+
+# Read linewise, IFS= sets the internal field separator to the newline character
+# and allows to read whitespace characters like tabs and spaces
 while IFS= read -r line || [[ -n "$line" ]]; do
+    # important! Google Calendar files have a carriage return at the end of each line (\r\n)
+    # but KDE calendar files don't, therefore it is necessary to remove the carriage return (\r)
     line=$(echo "$line" | tr -d '\r')
     if [[ $line == "BEGIN:VEVENT" ]]; then
         event_block=1
+
+    # Parses the read appointment and converts it to the local time
     elif [[ $line == "END:VEVENT" ]]; then
         # check if time is not empty and convert date and time from UTC to local time
         if [[ -n $start_time && -n $end_time ]]; then
@@ -173,6 +181,8 @@ while IFS= read -r line || [[ -n "$line" ]]; do
         end_date=''
         end_time=''
         description=''
+    
+    # Stores the date, time and description of the appointment in variables
     elif [[ $event_block -eq 1 ]]; then
         if [[ $line == DTSTART* ]]; then
             start_date=$(echo "$line" | awk -F ':' '{print $2}' | awk -F 'T' '{print $1}')
@@ -191,6 +201,7 @@ result=()
 
 # Loop through all appointments and check if they span multiple days
 # Depending whether a time is given the output is formatted differently
+# If the appointment spans multiple days the amount of days is also printed, e.g. (2 days)
 for ((i = 0; i < ${#appointments[@]}; i++)); do
     currentMatch="${appointments[i]}"
     
@@ -200,7 +211,7 @@ for ((i = 0; i < ${#appointments[@]}; i++)); do
     timeEnd="$( echo "${currentMatch}" | cut -d \; --field 4 )"
     desc="$( echo "${currentMatch}" | cut -d \; --field 5 )"
 
-    multipleDays=0     # if the appointment spans multiple days the amount of days is also printed
+    multipleDays=0     
     amountOfDays=$(getDateDiff "$dateStart" "$dateEnd")
 
     # Checks the full day mode without times
@@ -212,7 +223,7 @@ for ((i = 0; i < ${#appointments[@]}; i++)); do
             [[ ${multipleDays} -eq 1 ]] && resultString+=" (${amountOfDays} days)"
             result+=( "${resultString}" )
         fi
-    # Checks the normal mode considering an appointment can be over multiple days
+    # Checks the appointments with times considering an appointment can be over multiple days
     else
         [[ ${amountOfDays} -gt 0 ]] && multipleDays=1
         if [[ ${today} -ge ${dateStart} && ${today} -le ${dateEnd} ]] ; then
@@ -223,11 +234,10 @@ for ((i = 0; i < ${#appointments[@]}; i++)); do
             result+=( "${resultString}" )
         fi
     fi
-
 done
 
-printf "\n---------RESULT -------------%s\n" "${today}"
-echo "${result[@]}"
+[[ verboseMode -eq 1 ]] && printf "\n---------RESULTS---------\n"
+for i in "${result[@]}"; do printVerbose "$i"; done
 
 function ifEmptyReplaceWithDefault ()
 # DESCRIPTION: checks if read input is empty and replaces it with default
@@ -245,9 +255,9 @@ function ifEmptyReplaceWithDefault ()
 useExistingConfig="n"
 cd "${HOME}" || printError "Failed to change to home directory"
 if [[ -f ".ssmtprc" ]] ; then
-    echo "ssmtp is already configured"
+    echo "ssmtp is already configured with the following settings:"
     cat .ssmtprc
-    read -r -p "Do you want to use the existing configuration? [y/n] " useExistingConfig
+    read -r -p "Do you want to use the existing configuration? [y/n]" useExistingConfig
     if ! [[ ${useExistingConfig} =~ ^[ny]{1}$ ]] ; then
         printError "Invalid input."
     fi
@@ -293,6 +303,5 @@ $(for i in "${result[@]}"; do echo "$i"; done)"
 
 [[ verboseMode -eq 1 ]] && ssmtp -vvv -C "${HOME}/.ssmtprc" "${emailAdress}" <<< "${emailString}"
 [[ verboseMode -eq 0 ]] && ssmtp -C "${HOME}/.ssmtprc" "${emailAdress}" <<< "${emailString}"
-
 
 exit 0

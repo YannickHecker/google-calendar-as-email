@@ -6,9 +6,6 @@ Therefore it is no longer necessary to check the calendar manually and the event
 
 ## Requirements
 - ssmtp to send emails
-```
-ssmtp
-```
 
 ## Setup
 1. Allow IMAP in the **Gmail** Settings

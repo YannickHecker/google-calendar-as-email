@@ -42,6 +42,10 @@ The script
 - stores (in case there is none) a configuration file (*~/.ssmtprc*) and sends the appointments as email with the subject: "Calendar YYYYMMDD" to the email from the mail server
 
 ## Limitations
-- The script can also parse local ics files, with the command `--file <path_to_file>` but this works only if the events in the ics file are in UTC time, otherwise the events will be shifted by the timezone of the system and the events will be wrong.
+- The script can also parse local ics files, with the command `--file <path_to_file>` but this works only if the events in the ics file are in UTC time, otherwise the events will be shifted by the timezone of the system and the events will be wrong. So for example if the DTSTART property already defines the timezone, the script will not work. The following example will not work:
+```
+DTSTART;TZID=Europe/Berlin:20221217T170000
+DTEND;TZID=Europe/Berlin:20221217T200000
+```
 - No support for TODOs (yet)
 - If the appointment spans multiple days, the appointment will be shown like this `14:00-16:00 | Event (3 days)` therefore it is not possible to see when it will end or when it started, prefer using full day events instead.

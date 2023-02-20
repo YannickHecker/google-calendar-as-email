@@ -2,21 +2,12 @@
 ## Purpose
 The following script downloads a gmail calendar and sends an email containing the events of the current day. 
 This can be send automatically every day by setting up a cron task. 
-Therefore it is no longer necessary to check the calendar manually and the events are always available in the inbox stored in a plain string.
+Therefore it is no longer necessary to check the calendar manually and the events are always available in the inbox stored as a readable string.
 
 ## Requirements
 - ssmtp to send emails
 ```
 ssmtp
-```
-
-For Fedora
-```bash
-sudo dnf install ssmtp
-```
-For Ubuntu
-```bash
-sudo apt-get install ssmtp
 ```
 
 ## Setup
@@ -40,7 +31,8 @@ mail server the server:port are also required and whether STARTTLS is used.
 ## Usage
 ```bash
 sh email_calendar.sh
-    --url <GCalendar URL> (recommended) OR
+    --url <GCalendar URL> (recommended) 
+    OR
     --file <path_to_ics_file>
     -v (optional) verbose mode
     -h (optional) help

@@ -238,6 +238,9 @@ for ((i = 0; i < ${#appointments[@]}; i++)); do
     fi
 done
 
+# If no appointments are found, the mail contains the text "No appointments today"
+[[ ${#result[@]} -eq 0 ]] && result+=("No appointments today")
+
 [[ verboseMode -eq 1 ]] && printf "\n---------RESULTS---------\n"
 for i in "${result[@]}"; do printVerbose "$i"; done
 
@@ -296,7 +299,6 @@ EOF
 elif [[ ${useExistingConfig} == 'y' ]] ; then
     emailAdress=$(grep "AuthUser" .ssmtprc | cut -d = --field 2)
 fi
-
 
 today="$(date +'%d-%m-%Y')"
 emailString="Subject: Calendar ${today}

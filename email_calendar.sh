@@ -1,11 +1,12 @@
 #!/bin/bash -u
 #----------------------------------------------------------
 #     Synopsis: email_calendar [-hv]
-#               --url <Google_Calendar_URL> or
+#               --url <Google_Calendar_URL> OR
 #               --file <Path_to_local_ics_file>
 #
-#  Description: sends the entries of a Google Calendar
-#               as an email, also works with local .ics files
+#  Description: Sends the daily appointments of a Google Calendar per email.
+#               Also works with local .ics files as long as they only use UTC times.
+#               Check the README.md for setup instructions.
 #     Language: bash script
 #       Author: heckerya78723@th-nuernberg.de
 #----------------------------------------------------------
@@ -15,11 +16,11 @@ helpText=$(sed -ne '1,/#\-\-\-\-\-/d;/#\-\-\-\-\-/q;s/^# //p' "$0")
 verboseMode=0
 inputFile=""
 calendarURL=""
-storageDir="${HOME}/.gcal"
-calendarFile=""
 
 # Internal variables
 scriptName=$(basename "${0%.*sh}")
+storageDir="${HOME}/.gcal"
+calendarFile=""
 
 while [[ "${1-}" =~ ^- ]]; do
     case "$1" in
